@@ -1,7 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-
+console.log('OPENAI_API_KEY set:', !!process.env.OPENAI_API_KEY);
+console.log('ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY);
+console.log('All env vars:', Object.keys(process.env).join(', '));
 const app = express();
 const PORT = process.env.PORT || 3001;
 
