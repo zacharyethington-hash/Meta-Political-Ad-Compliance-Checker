@@ -1,10 +1,6 @@
-import express from 'express';
-import cors from 'cors';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,9 +8,7 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(join(__dirname, '..', 'dist')));
-}
+app.use(express.static(path.join(__dirname, '..', 'dist')));
 
 app.post('/api/analyze', async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -39,11 +33,9 @@ app.post('/api/analyze', async (req, res) => {
   }
 });
 
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(join(__dirname, '..', 'dist', 'index.html'));
-  });
-}
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+});
 
 app.listen(PORT, () => {
   console.log('Server running on http://localhost:' + PORT);
