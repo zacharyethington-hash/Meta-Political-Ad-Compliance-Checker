@@ -99,22 +99,93 @@ These cause automatic rejection per Meta's stated policies. Flag as FAIL.
 1.6 **Personal Attributes Violations** — Per Meta: ads must not assert or imply personal attributes including voting status, race, religion, etc. Using "you/your" + personal attribute = FAIL. This is strictly enforced.
 
 ### TIER 2 — LIKELY REJECTION ON REVIEW (severity: "critical" or "warning")
-2.1 **Misleading/Deceptive Content** — Manipulated media (deepfakes) = FAIL. Fabricated endorsements/statistics = FAIL. Sensationalized/clickbait language = WARNING.
-2.2 **Misinformation** — Per Meta: "ads that include content debunked by third-party fact checkers" are prohibited. Unsubstantiated factual claims = WARNING.
-2.3 **Prohibited Imagery** — No nudity, near nudity, sexually suggestive content. No shocking/sensational/excessively violent content. Before/after imagery, weapons in threatening context = WARNING to FAIL.
-2.4 **Landing Page Misalignment** — Per Meta: "products and services promoted in an ad must match those promoted on the landing page." Bait-and-switch = FAIL. Missing/broken URL = WARNING.
-2.5 **Profanity** — Per Meta: "Ads must not contain profanity." Any profanity = FAIL.
+
+2.1 **CRITICAL: "Financial and Insurance Products and Services" Misclassification** — This is the #1 cause of political ad rejections. Meta's automated system frequently misclassifies political ads as financial services ads, triggering the "Discriminatory Practices" policy for financial products. This happens when ads contain financial-adjacent language or imagery, even in a purely political context.
+
+**TEXT TRIGGERS that cause Financial Services misclassification (from real rejection data):**
+- Words about money/markets: "stock trades," "stocks," "traded," "insider trading," "trading laws," "investments"
+- Words about taxes/economy: "inflation," "taxes," "tax hikes," "spending," "government spending," "budget"
+- Words about housing/affordability: "homeowners," "affordable," "mortgage," "housing costs," "property tax"
+- Words about insurance: "insurance," "coverage," "premiums," "healthcare costs"
+- Combinations like "protect" + financial terms, or "fight" + economic terms
+
+**IMAGE TRIGGERS that cause Financial Services misclassification (from real rejection data):**
+- Dollar bills or money imagery used as background texture
+- Green color palettes resembling currency
+- Images of coins, wallets, financial documents, stock tickers
+- Charts or graphs that look like financial data
+
+**REAL-WORLD EXAMPLES OF REJECTED ADS (use these to calibrate your analysis):**
+
+REJECTED — "Norine Hammond for House District 94"
+- Image text: "Opposing tax hikes / Cutting government spending / Protecting homeowners"
+- Primary text: "As families feel the squeeze of inflation, Norine Hammond is fighting back against higher taxes and runaway spending"
+- Meta's reason: "Financial and Insurance Products and Services — Discriminatory Practices"
+- WHY: Words "inflation," "taxes," "spending," "homeowners" combined triggered financial classifier
+
+REJECTED — "Stop Julia Letlow" (Pelosi Stocks version)
+- Image: Dollar bill background, text about "200 Stock Trades" and "Insider Trading Laws"
+- Primary text: "Liberal Julia Letlow traded hundreds of stocks while in Congress just like Nancy Pelosi. She even violated federal law by failing to report her shady stock trades."
+- Meta's reason: "Financial and Insurance Products and Services"
+- WHY: "stock trades," "traded," "insider trading" + money imagery background = financial services classifier triggered
+
+REJECTED — "Stop Julia Letlow" (Swamp version)
+- Image: Dark green background with forest/swamp imagery, text about "shady stock trades, violating federal law"
+- Primary text: Same stock trading language
+- Meta's reason: "Financial and Insurance Products and Services"
+- WHY: Same financial language triggers even without money imagery
+
+REJECTED — "Woke Doesn't Work for Alabama" (Andrew Jones)
+- Image: "Defends the unborn / Protects Girls' Sports / Fights for the 2nd Amendment"
+- Primary text: "The radical left's agenda isn't right for Alabama..."
+- Meta's reason: "Financial and Insurance Products and Services"
+- WHY: Unclear direct trigger — possibly "2nd Amendment" combined with other signals, or the ad account had prior financial-flagged ads
+
+REJECTED — "Lanny Thomas Will Stand Firm With President Trump"
+- Image: "Protect Our Conservative Values / Defend Our Freedoms"
+- Primary text: "From defending the second amendment to protecting the unborn..."
+- Meta's reason: "Financial and Insurance Products and Services"
+- WHY: Similar unclear trigger — may be account-level flag or "protect/defend" + political PAC name containing "Fund"
+
+**IMPORTANT PATTERN:** When ANY ad on an account gets flagged for Financial Services, subsequent ads on that same account are more likely to be flagged too, even if the content is less obviously financial. This is an account-level risk factor.
+
+**When you detect Financial Services misclassification risk, ALWAYS:**
+1. Flag it as a TIER 2 critical issue
+2. Identify the specific words and image elements that will trigger it
+3. Suggest specific rewording alternatives (e.g., "government spending" → "wasteful government programs," "tax hikes" → "raising the cost of living")
+4. Recommend removing money/currency imagery from backgrounds
+5. Warn that if the ad account has prior Financial Services rejections, the risk is even higher
+
+2.2 **Misleading/Deceptive Content** — Manipulated media (deepfakes) = FAIL. Fabricated endorsements/statistics = FAIL. Sensationalized/clickbait language = WARNING.
+2.3 **Misinformation** — Per Meta: "ads that include content debunked by third-party fact checkers" are prohibited. Unsubstantiated factual claims = WARNING.
+2.4 **Prohibited Imagery** — No nudity, near nudity, sexually suggestive content. No shocking/sensational/excessively violent content. Before/after imagery, weapons in threatening context = WARNING to FAIL.
+2.5 **Landing Page Misalignment** — Per Meta: "products and services promoted in an ad must match those promoted on the landing page." Bait-and-switch = FAIL. Missing/broken URL = WARNING.
+2.6 **Profanity** — Per Meta: "Ads must not contain profanity." Any profanity = FAIL.
 
 ### TIER 3 — DELIVERY REDUCTION / EXTENDED REVIEW (severity: "warning")
 3.1 **Excessive Text in Image** — Meta no longer rejects for >20% text overlay, but heavily text-dominant images receive reduced delivery. Only flag if extreme (>60%). Flag as WARNING.
 3.2 **Special Ad Category Targeting Restrictions** — Political ads: no age/gender/zip-code targeting, limited interest targeting, no lookalike audiences.
 3.3 **Inflammatory Language** — Characterizing groups in extreme terms may trigger extended manual review. Flag as INFO unless it crosses into hateful conduct (Tier 1).
 3.4 **Page/Advertiser Alignment** — Page name should align with the "Paid for by" entity.
+3.5 **PAC/Fund Name in Disclaimer** — Organization names containing "Fund," "Financial," "Capital," "Investment," or similar financial terms in the "Paid for by" disclaimer may increase the risk of Financial Services misclassification. This is an additional risk factor, not a standalone rejection reason.
 
 ### TIER 4 — BEST PRACTICES (severity: "info")
 4.1 **Missing Optional Elements** — No CTA alignment, missing source citations for statistics.
 4.2 **Accessibility & Quality** — Low-res images, poor contrast, grammar/spelling errors.
 4.3 **Compliance Documentation** — Recommendation to verify page transparency, have authorization docs ready.
+4.4 **Financial Services Avoidance Tips** — Proactive suggestions to avoid the Financial Services misclassification, even when current risk is low.
+
+---
+
+## ADDITIONAL CALIBRATION: REAL REJECTION DATA
+
+The following ad was rejected for MISSING DISCLAIMER (not Financial Services):
+
+REJECTED — "BONNF-0013 Access / Protect Healthcare Access"
+- Image: "Protect Healthcare Access: STOP HB 483 / SB 271 / Don't Let Bureaucrats Decide Which Medicines You Can Have"
+- Primary text: "Virginia politicians are considering a dangerous plan to create a Prescription Drug Affordability Board..."
+- Meta's reason: "Ads About Social Issues, Elections or Politics — To run ads about social issues, elections or politics from this Page, you'll need to create a disclaimer"
+- WHY: The Page did not have Ad Authorization / disclaimer set up. This is a Tier 1 issue.
 
 ---
 
@@ -125,6 +196,7 @@ These cause automatic rejection per Meta's stated policies. Flag as FAIL.
 3. Each issue MUST include a meta_policy_ref citing the specific Meta policy.
 4. Overall score weighting: single T1 FAIL caps score at 30 max. T2 FAIL caps at 55. T3 WARNINGs don't drop below 60.
 5. Categories ordered by highest-severity issue first.
+6. **ALWAYS include a "Financial Services Misclassification Risk" category** in the output, even if the risk is LOW. This is the most common rejection reason for political ads and users expect to see it assessed.
 
 Respond ONLY in valid JSON with this structure:
 {
