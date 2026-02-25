@@ -1,24 +1,199 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-console.log('OPENAI_API_KEY set:', !!process.env.OPENAI_API_KEY);
-console.log('ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY);
-console.log('All env vars:', Object.keys(process.env).join(', '));
+
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 
 app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 
+// Serve frontend if it exists
 app.use(express.static(path.join(__dirname, '..', 'dist')));
 
-// --- Claude API call ---
-async function callClaude(body) {
+// ─── System prompt with Meta's actual policy language ─────────────────
+const POLICY_SYSTEM_PROMPT = `You are an expert Meta/Facebook political advertising compliance analyst. Your job is to pre-screen political ads before submission to Meta using the EXACT policy language from Meta's official Advertising Standards and Community Standards (effective 2025).
+
+You have been trained on Meta's actual policy documents. You MUST cite specific policy sections when flagging issues. Do NOT guess or paraphrase — use the real policy rules below.
+
+---
+
+## META'S OFFICIAL ADVERTISING STANDARDS — KEY POLICIES FOR POLITICAL ADS
+
+### SOURCE: Meta Advertising Standards — "Ads about Social Issues, Elections or Politics"
+"Advertisers can run ads about social issues, elections or politics, provided the advertiser complies with all applicable laws and the authorization process required by Meta. Meta may restrict issue, electoral or political ads."
+- ALL such ads require completion of Meta's Ad Authorization process (identity verification + "Paid for by" disclaimer setup)
+- These ads MUST be placed in the "Social Issues, Elections, or Politics" Special Ad Category
+- These ads are stored in the Ad Library for 7 years
+
+### SOURCE: Meta Advertising Standards — "Privacy Violations and Personal Attributes"
+"Ads must not contain content that asserts or implies personal attributes. This includes direct or indirect assertions or implications about a person's race, ethnicity, religion, beliefs, age, sexual orientation or practices, gender identity, disability, physical or mental health (including medical conditions), vulnerable financial status, voting status, membership in a trade union, criminal record, or name."
+
+SPECIFIC RULES FROM META:
+- PROHIBITED: Using "you/your/other" to reference a personal attribute (e.g., "Meet OTHER seniors", "Are YOU Christian?", "Records show YOUR voter registration is incomplete")
+- ALLOWED: Using "you/your" WITHOUT a personal attribute (e.g., general calls to action)
+- ALLOWED: Broad geographic references like "American" or "New Yorker"
+- ALLOWED: Passing reference to gender, age groups, or age ranges
+- PROHIBITED for VOTING STATUS specifically: "Your ballot hasn't been received yet", "Records show that your voter registration is incomplete"
+- ALLOWED for VOTING STATUS: "Learn about voter registration", "I voted"
+- PROHIBITED for NAME: "Billy Taylor, get this t-shirt with your name in print!"
+- ALLOWED for NAME: "We print customizable t-shirts and stickers with your name"
+
+### SOURCE: Meta Advertising Standards — "Discriminatory Practices"
+"Ads must not discriminate or encourage discrimination against people based on personal attributes such as race, ethnicity, color, national origin, religion, age, sex, sexual orientation, gender identity, family status, disability, medical or genetic condition."
+- US advertisers running financial products/services, housing, or employment ads MUST use Special Ad Category with approved targeting options
+- Special Ad Category restricts: age targeting, gender targeting, zip-code level targeting, interest-based targeting, lookalike audiences
+
+### SOURCE: Meta Advertising Standards — "Misinformation"
+"Meta prohibits ads that include content debunked by third-party fact checkers. Advertisers that repeatedly post information deemed to be false may have restrictions placed on their ability to advertise across Meta technologies."
+
+### SOURCE: Meta Advertising Standards — "Adult Nudity and Sexual Activity"
+Ads can't:
+- Depict nudity or near nudity (even where permitted by Community Standards)
+- Depict sexual activity, sexually suggestive gestures, simulated sex, sexual dancing, or kissing with visible tongue
+- Depict logos/screenshots/clips of pornographic websites
+- Contain audio of sexual activity
+
+### SOURCE: Meta Advertising Standards — "Violent and Graphic Content"
+"Ads must not contain shocking, sensational or excessively violent content."
+
+### SOURCE: Meta Advertising Standards — "Profanity"
+"Ads must not contain profanity."
+
+### SOURCE: Meta Advertising Standards — "Bullying and Harassment"
+"Ads must not contain attacks that are meant to degrade or shame public and private individuals."
+
+### SOURCE: Meta Community Standards — "Hateful Conduct"
+"Ads must not attack people on the basis of what we call protected characteristics: race, ethnicity, national origin, disability, religious affiliation, caste, sexual orientation, sex, gender identity and serious disease."
+
+### SOURCE: Meta Advertising Standards — "Coordinating Harm and Promoting Crime"
+"Ads must not facilitate, organize, promote or admit to certain criminal or harmful activities."
+
+### SOURCE: Meta Advertising Standards — "Unacceptable Business Practices"
+"Ads must not promote products, services, schemes or offers using identified deceptive or misleading practices, including those meant to scam people out of money or personal information."
+
+### SOURCE: Meta Advertising Standards — "Relevance"
+"Ads must clearly represent the company, product, service, or brand that is being advertised. All ad components, including any text, images or other media, must be relevant to the product or service being offered. The products and services promoted in an ad must match those promoted on the landing page."
+
+### SOURCE: Meta Advertising Standards — "Targeting"
+"Advertisers must not use targeting options to discriminate against, harass, provoke, or disparage people or to engage in predatory advertising practices."
+
+### SOURCE: Meta Advertising Standards — "Video Ads"
+"Videos and other similar ad types must not use overly disruptive tactics, such as flashing screens."
+
+### SOURCE: Meta Advertising Standards — "Third-Party Intellectual Property"
+"Ads may not contain content that violates the intellectual property rights of any third party, including copyright, trademark or other legal rights."
+
+---
+
+## ENFORCEMENT HIERARCHY (Tier 1 = most likely to cause immediate rejection)
+
+### TIER 1 — IMMEDIATE REJECTION (severity: "critical")
+These cause automatic rejection per Meta's stated policies. Flag as FAIL.
+
+1.1 **Missing "Paid for by" Disclaimer** — Meta's Ad Authorization policy requires ALL political/social issue ads to include a "Paid for by" disclaimer matching the authorized advertiser name.
+1.2 **Disclaimer Inconsistency** — The "Paid for by" entity must be consistent across: (a) the disclaimer entered in Ads Manager, (b) the Facebook Page running the ad, (c) any disclaimer visible in the ad creative image, (d) the landing page organization. Mismatched entities = FAIL. Minor variations = WARNING.
+1.3 **Missing Ad Authorization** — Per Meta: advertisers running political ads MUST complete the Ad Authorization process (identity verification + disclaimer setup).
+1.4 **Community Standards Violations** — Per Meta policy, "Ads must not violate our Community Standards." This includes: hate speech, threats of violence, voter suppression (false election dates/eligibility requirements), content exploiting children, dangerous organizations content, human exploitation.
+1.5 **Special Ad Category Not Declared** — Political ads MUST be in "Social Issues, Elections, or Politics" Special Ad Category.
+1.6 **Personal Attributes Violations** — Per Meta: ads must not assert or imply personal attributes including voting status, race, religion, etc. Using "you/your" + personal attribute = FAIL. This is strictly enforced.
+
+### TIER 2 — LIKELY REJECTION ON REVIEW (severity: "critical" or "warning")
+2.1 **Misleading/Deceptive Content** — Manipulated media (deepfakes) = FAIL. Fabricated endorsements/statistics = FAIL. Sensationalized/clickbait language = WARNING.
+2.2 **Misinformation** — Per Meta: "ads that include content debunked by third-party fact checkers" are prohibited. Unsubstantiated factual claims = WARNING.
+2.3 **Prohibited Imagery** — No nudity, near nudity, sexually suggestive content. No shocking/sensational/excessively violent content. Before/after imagery, weapons in threatening context = WARNING to FAIL.
+2.4 **Landing Page Misalignment** — Per Meta: "products and services promoted in an ad must match those promoted on the landing page." Bait-and-switch = FAIL. Missing/broken URL = WARNING.
+2.5 **Profanity** — Per Meta: "Ads must not contain profanity." Any profanity = FAIL.
+
+### TIER 3 — DELIVERY REDUCTION / EXTENDED REVIEW (severity: "warning")
+3.1 **Excessive Text in Image** — Meta no longer rejects for >20% text overlay, but heavily text-dominant images receive reduced delivery. Only flag if extreme (>60%). Flag as WARNING.
+3.2 **Special Ad Category Targeting Restrictions** — Political ads: no age/gender/zip-code targeting, limited interest targeting, no lookalike audiences.
+3.3 **Inflammatory Language** — Characterizing groups in extreme terms may trigger extended manual review. Flag as INFO unless it crosses into hateful conduct (Tier 1).
+3.4 **Page/Advertiser Alignment** — Page name should align with the "Paid for by" entity.
+
+### TIER 4 — BEST PRACTICES (severity: "info")
+4.1 **Missing Optional Elements** — No CTA alignment, missing source citations for statistics.
+4.2 **Accessibility & Quality** — Low-res images, poor contrast, grammar/spelling errors.
+4.3 **Compliance Documentation** — Recommendation to verify page transparency, have authorization docs ready.
+
+---
+
+## OUTPUT REQUIREMENTS
+
+1. Issues MUST be sorted by tier — Tier 1 first, then 2, 3, 4.
+2. Each issue title must include tier prefix: "[T1]", "[T2]", "[T3]", "[T4]".
+3. Each issue MUST include a meta_policy_ref citing the specific Meta policy.
+4. Overall score weighting: single T1 FAIL caps score at 30 max. T2 FAIL caps at 55. T3 WARNINGs don't drop below 60.
+5. Categories ordered by highest-severity issue first.
+
+Respond ONLY in valid JSON with this structure:
+{
+  "overall_risk": "LOW|MEDIUM|HIGH",
+  "overall_score": 0-100,
+  "summary": "Brief overall assessment highlighting the highest-priority issue first",
+  "categories": [
+    {
+      "name": "Category Name",
+      "status": "PASS|WARNING|FAIL",
+      "confidence": 0-100,
+      "issues": [
+        {
+          "tier": 1,
+          "title": "[T1] Issue title",
+          "severity": "info|warning|critical",
+          "description": "What the issue is, citing the specific Meta policy language",
+          "recommendation": "Specific actionable fix",
+          "meta_policy_ref": "Advertising Standards — Section Name"
+        }
+      ]
+    }
+  ],
+  "quick_fixes": ["Actionable suggestions ordered by priority — Tier 1 fixes first"]
+}`;
+
+// ─── Rate limiting ────────────────────────────────────────────────
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 60 * 1000;
+const RATE_LIMIT_MAX = 10;
+
+function rateLimit(req, res, next) {
+  const ip = req.headers['x-forwarded-for'] || req.ip;
+  const now = Date.now();
+  const record = rateLimitMap.get(ip) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
+  if (now > record.resetTime) { record.count = 0; record.resetTime = now + RATE_LIMIT_WINDOW; }
+  record.count++;
+  rateLimitMap.set(ip, record);
+  res.setHeader('X-RateLimit-Limit', RATE_LIMIT_MAX);
+  res.setHeader('X-RateLimit-Remaining', Math.max(0, RATE_LIMIT_MAX - record.count));
+  if (record.count > RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: 'Too many requests. Please wait a minute.' });
+  }
+  next();
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of rateLimitMap) {
+    if (now > record.resetTime) rateLimitMap.delete(ip);
+  }
+}, 5 * 60 * 1000);
+
+// ─── API key auth ─────────────────────────────────────────────────
+function requireApiKey(req, res, next) {
+  const key = req.headers['x-api-key'];
+  const validKey = process.env.API_ACCESS_KEY;
+  if (validKey && key !== validKey) {
+    return res.status(401).json({ error: 'Invalid or missing x-api-key header.' });
+  }
+  next();
+}
+
+// ─── Claude call with retry ───────────────────────────────────────
+async function callClaude(messages, maxTokens) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set.');
 
-  const maxRetries = 2;
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+  for (let attempt = 0; attempt <= 2; attempt++) {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -26,11 +201,16 @@ async function callClaude(body) {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: maxTokens || 4096,
+        system: POLICY_SYSTEM_PROMPT,
+        messages,
+      }),
     });
 
     if (response.status === 529 || response.status === 503) {
-      if (attempt < maxRetries) {
+      if (attempt < 2) {
         console.log('Claude overloaded, retrying in ' + (attempt + 1) * 2 + 's...');
         await new Promise(r => setTimeout(r, (attempt + 1) * 2000));
         continue;
@@ -43,58 +223,37 @@ async function callClaude(body) {
       throw new Error(err.error?.message || 'Claude API error');
     }
 
-    const data = await response.json();
-    return { data, provider: 'claude' };
+    return await response.json();
   }
   throw new Error('OVERLOADED');
 }
 
-// --- OpenAI fallback ---
-async function callOpenAI(body) {
+// ─── OpenAI fallback ──────────────────────────────────────────────
+async function callOpenAI(messages) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY is not set. Cannot fall back.');
 
-  // Convert from Claude format to OpenAI format
-  const messages = [];
+  const oaiMessages = [{ role: 'system', content: POLICY_SYSTEM_PROMPT }];
 
-  // System prompt
-  if (body.system) {
-    messages.push({ role: 'system', content: body.system });
-  }
-
-  // User messages - convert Claude's content blocks to OpenAI format
-  for (const msg of body.messages) {
+  for (const msg of messages) {
     if (typeof msg.content === 'string') {
-      messages.push({ role: msg.role, content: msg.content });
+      oaiMessages.push({ role: msg.role, content: msg.content });
     } else if (Array.isArray(msg.content)) {
       const parts = [];
       for (const block of msg.content) {
-        if (block.type === 'text') {
-          parts.push({ type: 'text', text: block.text });
-        } else if (block.type === 'image') {
-          parts.push({
-            type: 'image_url',
-            image_url: {
-              url: 'data:' + block.source.media_type + ';base64,' + block.source.data,
-            },
-          });
+        if (block.type === 'text') parts.push({ type: 'text', text: block.text });
+        else if (block.type === 'image') {
+          parts.push({ type: 'image_url', image_url: { url: 'data:' + block.source.media_type + ';base64,' + block.source.data } });
         }
       }
-      messages.push({ role: msg.role, content: parts });
+      oaiMessages.push({ role: msg.role, content: parts });
     }
   }
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + apiKey,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      max_tokens: body.max_tokens || 4096,
-      messages: messages,
-    }),
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+    body: JSON.stringify({ model: 'gpt-4o', max_tokens: 4096, messages: oaiMessages }),
   });
 
   if (!response.ok) {
@@ -103,48 +262,144 @@ async function callOpenAI(body) {
   }
 
   const data = await response.json();
-
-  // Convert OpenAI response back to Claude format so the frontend works unchanged
-  return {
-    data: {
-      content: [{ type: 'text', text: data.choices[0].message.content }],
-    },
-    provider: 'openai',
-  };
+  return { content: [{ type: 'text', text: data.choices[0].message.content }] };
 }
 
-// --- Main endpoint ---
-app.post('/api/analyze', async (req, res) => {
-  try {
-    // Try Claude first
-    const result = await callClaude(req.body);
-    console.log('Response from: ' + result.provider);
-    res.json(result.data);
-  } catch (err) {
-    if (err.message === 'OVERLOADED') {
-      console.log('Claude overloaded after retries. Falling back to OpenAI...');
-      try {
-        const result = await callOpenAI(req.body);
-        console.log('Response from: ' + result.provider + ' (fallback)');
-        res.json(result.data);
-      } catch (fallbackErr) {
-        console.error('Fallback also failed:', fallbackErr.message);
-        res.status(500).json({
-          error: { message: 'Both Claude and OpenAI failed. ' + fallbackErr.message },
-        });
+// ─── Parse AI response to JSON ────────────────────────────────────
+function parseComplianceResponse(data) {
+  const text = data.content?.map(i => i.text || '').join('\n') || '';
+  if (!text) throw new Error('Empty response from AI.');
+  let jsonStr = text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) jsonStr = jsonMatch[0];
+  jsonStr = jsonStr.replace(/```json|```/g, '').trim();
+  return JSON.parse(jsonStr);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// API ENDPOINTS
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── Health check ─────────────────────────────────────────────────
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    version: '2.0.0',
+    anthropic_key_set: !!process.env.ANTHROPIC_API_KEY,
+    openai_key_set: !!process.env.OPENAI_API_KEY,
+  });
+});
+
+// ─── Main compliance check endpoint ───────────────────────────────
+// POST /api/check
+// Body: { headline, body_text, paid_for_by, facebook_page_url, landing_url,
+//         ad_category, target_audience, images: [{ base64, media_type }] }
+app.post('/api/check', rateLimit, requireApiKey, async (req, res) => {
+  const {
+    headline,
+    body_text,
+    paid_for_by,
+    facebook_page_url,
+    landing_url,
+    ad_category,
+    target_audience,
+    images,
+    video_description,
+  } = req.body;
+
+  if (!headline && !body_text && !images?.length) {
+    return res.status(400).json({ error: 'At least a headline, body_text, or images must be provided.' });
+  }
+
+  const adDetails = [
+    'AD HEADLINE: ' + (headline || '(not provided)'),
+    'AD BODY TEXT: ' + (body_text || '(not provided)'),
+    'PAID FOR BY DISCLAIMER: ' + (paid_for_by || '(not provided)'),
+    'FACEBOOK PAGE URL: ' + (facebook_page_url || '(not provided)'),
+    'LANDING PAGE URL: ' + (landing_url || '(not provided)'),
+    'VIDEO/VISUAL DESCRIPTION: ' + (video_description || '(not provided)'),
+    'TARGET AUDIENCE DESCRIPTION: ' + (target_audience || '(not provided)'),
+    'AD CATEGORY: ' + (ad_category || 'political'),
+  ].join('\n');
+
+  // Build message content
+  const userContent = [];
+
+  if (images && images.length > 0) {
+    images.forEach((img, i) => {
+      userContent.push({ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.base64 } });
+      if (images.length > 1) {
+        userContent.push({ type: 'text', text: '[Image ' + (i + 1) + ' of ' + images.length + ']' });
       }
-    } else {
-      console.error('API error:', err.message);
-      res.status(500).json({ error: { message: err.message } });
+    });
+    const plural = images.length > 1;
+    userContent.push({
+      type: 'text',
+      text: (plural
+        ? 'The ' + images.length + ' images above are the ad creatives. Analyze EACH image individually and note which image any issues apply to.'
+        : 'The image above is the ad creative. Analyze it carefully.')
+        + ' Check for policy compliance issues including: text overlay percentage, prohibited imagery, misleading visuals, sensational content, personal attributes assumptions, disclaimer consistency, and any other visual policy concerns.\n\nHere are the additional ad details:\n\n' + adDetails,
+    });
+  } else {
+    userContent.push({ type: 'text', text: 'Please analyze this political ad for Meta/Facebook policy compliance:\n\n' + adDetails });
+  }
+
+  const messages = [{ role: 'user', content: userContent }];
+
+  try {
+    let data;
+    try {
+      data = await callClaude(messages, 4096);
+      console.log('Response from: claude');
+    } catch (err) {
+      if (err.message === 'OVERLOADED') {
+        console.log('Claude overloaded. Falling back to OpenAI...');
+        data = await callOpenAI(messages);
+        console.log('Response from: openai (fallback)');
+      } else {
+        throw err;
+      }
     }
+
+    const result = parseComplianceResponse(data);
+    res.json(result);
+  } catch (err) {
+    console.error('Analysis error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
+// ─── Legacy endpoint for the frontend app ─────────────────────────
+app.post('/api/analyze', rateLimit, async (req, res) => {
+  try {
+    let data;
+    try {
+      data = await callClaude(req.body.messages, req.body.max_tokens || 4096);
+      console.log('Response from: claude');
+    } catch (err) {
+      if (err.message === 'OVERLOADED') {
+        console.log('Claude overloaded. Falling back to OpenAI...');
+        data = await callOpenAI(req.body.messages);
+        console.log('Response from: openai (fallback)');
+      } else {
+        throw err;
+      }
+    }
+    res.json(data);
+  } catch (err) {
+    console.error('API error:', err.message);
+    res.status(500).json({ error: { message: err.message } });
+  }
+});
+
+// ─── Serve frontend for all other routes ──────────────────────────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
 });
 
+// ─── Start ────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log('Server running on http://localhost:' + PORT);
+  console.log('ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY);
+  console.log('OPENAI_API_KEY set:', !!process.env.OPENAI_API_KEY);
 });
-
