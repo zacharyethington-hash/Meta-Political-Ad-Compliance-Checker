@@ -453,6 +453,7 @@ app.post('/api/analyze', rateLimit, async (req, res) => {
       data = await callClaude(req.body.messages, req.body.max_tokens || 4096, systemPrompt);
       console.log('Response from: claude');
     } catch (err) {
+      
       if (err.message === 'OVERLOADED') {
         console.log('Claude overloaded. Falling back to OpenAI...');
         data = await callOpenAI(req.body.messages, systemPrompt);
