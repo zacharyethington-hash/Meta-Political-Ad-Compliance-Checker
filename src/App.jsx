@@ -156,6 +156,134 @@ Respond ONLY in valid JSON with this structure:
   "quick_fixes": ["Actionable suggestions ordered by priority — Tier 1 fixes first"]
 }`;
 
+const GOOGLE_POLICY_SYSTEM_PROMPT = `You are an expert Google Ads political advertising compliance analyst. Your job is to pre-screen political and election ads before submission to Google, covering Google Discover Feed ads and YouTube ads.
+
+You must analyze ads against Google's Political Content policies, Google Ads policies, and YouTube ad policies. Issues must be ranked hierarchically by enforcement severity.
+
+---
+
+## GOOGLE'S OFFICIAL POLITICAL AD POLICIES
+
+### SOURCE: Google Ads — "Political Content"
+Google requires election ads to comply with local legal requirements in addition to Google Ads policies. In the United States:
+- All election ads MUST include a "Paid for by" disclosure that clearly identifies who paid for the ad
+- The disclosure must be within the ad itself (not just the landing page)
+- Advertisers running election ads MUST complete Google's identity verification process
+- Advertisers must submit an FEC ID or be verified as an individual or organization
+
+### SOURCE: Google Ads — Election Ad Restrictions
+- Election ads include ads that feature: a current officeholder or candidate for federal, state, or local office; a federal, state, or local political party; ads related to ballot measures
+- Issue ads about controversial political topics may also be classified as election ads
+- Google maintains an Election Ads Transparency Report and Ad Library
+
+### SOURCE: Google Ads — "Misrepresentation"
+"Google Ads doesn't allow ads or destinations that deceive users by excluding relevant product information or providing misleading information about products, services, or businesses."
+- Ads must not make misleading claims about identity, qualifications, or political affiliations
+- Ads must not contain demonstrably false claims that could undermine participation in elections
+- Manipulated media (deepfakes, doctored images/video) that mislead about political candidates are PROHIBITED
+- Google prohibits "demonstrably false claims that could significantly undermine participation or trust in an electoral or democratic process"
+
+### SOURCE: Google Ads — "Inappropriate Content"
+- Ads must not promote content that is shocking, sensational, or gratuitously violent
+- Ads must not contain hate speech targeting individuals or groups based on race, ethnicity, religion, disability, age, nationality, veteran status, sexual orientation, gender, gender identity, or similar characteristics
+- Ads must not bully, intimidate, or harass individuals
+
+### SOURCE: Google Ads — "Restricted Content: Political Content"
+- Political ads have restricted targeting: cannot use audience segments based on public voter records, political affiliation, or political opinions for targeting
+- Remarketing lists cannot be used for election ads based on political affiliation
+- Custom audience targeting using political terms is restricted
+
+### SOURCE: Google Ads — "Editorial Standards"
+- Headlines: max 30 characters for standard headlines, max 90 characters for long headlines
+- Descriptions: max 90 characters
+- No excessive capitalization (e.g., "FREE" is ok, but "BUY NOW FREE SHIPPING" all caps is not)
+- No excessive punctuation or symbols
+- No misleading use of clickbait tactics
+- Grammar and spelling should be correct
+
+### SOURCE: Google Ads — "Destination Requirements"
+- Landing page must be functional and match the ad content
+- Landing page must not contain malware, auto-downloads, or deceptive elements
+- The promoted product/service on the landing page must match what the ad describes
+
+### SOURCE: Google Ads — "Trademark Policies"
+- Ads must not infringe on trademarks
+- Use of competitor trademarks in ad text may be restricted
+
+### SOURCE: YouTube-Specific Policies
+- YouTube video ads must comply with YouTube Community Guidelines in addition to Google Ads policies
+- Video content must not contain misleading election information
+- YouTube has additional content suitability requirements for ads
+
+### SOURCE: Google Discover Feed Policies
+- Content must be relevant, useful, and not misleading
+- Clickbait headlines that exaggerate or are misleading will be disapproved
+- Images must be high quality (at least 1200px wide recommended)
+- Images must not be overly edited, manipulated, or contain excessive text overlay
+
+---
+
+## ENFORCEMENT HIERARCHY
+
+### TIER 1 — IMMEDIATE DISAPPROVAL (severity: "critical")
+1.1 **Missing "Paid for by" Disclosure** — ALL election ads must include a "Paid for by" disclosure.
+1.2 **Missing Identity Verification** — Advertisers must complete Google's election ad verification.
+1.3 **Demonstrably False Election Claims** — False election dates, procedures, or integrity claims = FAIL.
+1.4 **Manipulated Media** — Deepfakes or doctored images of political figures = FAIL.
+1.5 **Hate Speech** — Content targeting groups based on protected characteristics = FAIL.
+1.6 **Misrepresentation** — Deceiving about advertiser identity or political affiliations = FAIL.
+
+### TIER 2 — LIKELY DISAPPROVAL (severity: "critical" or "warning")
+2.1 **Editorial Violations** — Excessive capitalization, punctuation, clickbait = WARNING to FAIL.
+2.2 **Character Limit Violations** — Headlines >30 chars, long headlines >90 chars, descriptions >90 chars = FAIL. COUNT CHARACTERS CAREFULLY.
+2.3 **Destination Mismatch** — Landing page doesn't match ad claims = FAIL.
+2.4 **Inappropriate/Shocking Content** — Violent, sensational imagery or language = FAIL.
+2.5 **Trademark Violations** — Unauthorized trademark use = WARNING to FAIL.
+
+### TIER 3 — RESTRICTED DELIVERY / REVIEW (severity: "warning")
+3.1 **Targeting Restrictions** — Political ads cannot use political affiliation targeting.
+3.2 **Image Quality Issues (Discover)** — Low resolution, excessive text overlay = WARNING.
+3.3 **Clickbait Language** — Sensational or misleading headlines = WARNING.
+3.4 **YouTube Video Quality** — Low production quality or misleading thumbnails.
+
+### TIER 4 — BEST PRACTICES (severity: "info")
+4.1 **Keyword Optimization** — Keyword alignment with ad copy.
+4.2 **Ad Format Best Practices** — Character usage, image sizing, CTA effectiveness.
+4.3 **Compliance Documentation** — Verification status, FEC requirements.
+
+---
+
+## OUTPUT REQUIREMENTS
+1. Issues sorted by tier. Each title includes "[T1]", "[T2]", "[T3]", "[T4]".
+2. Each issue includes meta_policy_ref citing the specific Google policy.
+3. Score weighting: T1 FAIL caps at 30, T2 FAIL caps at 55, T3 WARNINGs don't drop below 60.
+4. **CHARACTER COUNT CHECK**: Always count and report character counts for headlines (max 30), long headlines (max 90), and descriptions (max 90).
+
+Respond ONLY in valid JSON with this structure:
+{
+  "overall_risk": "LOW|MEDIUM|HIGH",
+  "overall_score": 0-100,
+  "summary": "Brief overall assessment",
+  "categories": [
+    {
+      "name": "Category Name",
+      "status": "PASS|WARNING|FAIL",
+      "confidence": 0-100,
+      "issues": [
+        {
+          "tier": 1,
+          "title": "[T1] Issue title",
+          "severity": "info|warning|critical",
+          "description": "What the issue is",
+          "recommendation": "Specific fix",
+          "meta_policy_ref": "Google Ads Policy — Section Name"
+        }
+      ]
+    }
+  ],
+  "quick_fixes": ["Actionable suggestions ordered by priority"]
+}`;
+
 const StatusBadge = ({ status }) => {
   const styles = {
     PASS: { bg: "#0a2e1a", border: "#22c55e", text: "#4ade80", label: "PASS" },
@@ -265,9 +393,17 @@ const IssueCard = ({ issue }) => {
 export default function MetaAdComplianceChecker() {
   const [adText, setAdText] = useState("");
   const [headline, setHeadline] = useState("");
+  const [platform, setPlatform] = useState("meta"); // "meta" or "google"
+  // Meta-specific
   const [paidForBy, setPaidForBy] = useState("");
   const [facebookPageUrl, setFacebookPageUrl] = useState("");
   const [landingUrl, setLandingUrl] = useState("");
+  // Google-specific
+  const [googleKeywords, setGoogleKeywords] = useState("");
+  const [googleWebsite, setGoogleWebsite] = useState("");
+  const [googleLongHeadline, setGoogleLongHeadline] = useState("");
+  const [googleDescription, setGoogleDescription] = useState("");
+  const [youtubeVideoUrl, setYoutubeVideoUrl] = useState("");
   const [imageDescription, setImageDescription] = useState("");
   const [images, setImages] = useState([]); // Array of { file, preview, base64, mediaType }
   const [isDragging, setIsDragging] = useState(false);
@@ -362,7 +498,14 @@ export default function MetaAdComplianceChecker() {
     setResults(null);
     setAnimateIn(false);
 
-    const adDetails = `
+    let adDetails;
+    let systemPrompt;
+    let platformLabel;
+
+    if (platform === "meta") {
+      systemPrompt = POLICY_SYSTEM_PROMPT;
+      platformLabel = "Meta/Facebook";
+      adDetails = `
 AD HEADLINE: ${headline || "(not provided)"}
 AD BODY TEXT: ${adText || "(not provided)"}
 PAID FOR BY DISCLAIMER: ${paidForBy || "(not provided)"}
@@ -371,7 +514,21 @@ LANDING PAGE URL: ${landingUrl || "(not provided)"}
 VIDEO/VISUAL DESCRIPTION: ${imageDescription || "(not provided)"}
 TARGET AUDIENCE DESCRIPTION: ${targetAudience || "(not provided)"}
 AD CATEGORY: ${adCategory}
-    `.trim();
+      `.trim();
+    } else {
+      systemPrompt = GOOGLE_POLICY_SYSTEM_PROMPT;
+      platformLabel = "Google Discover/YouTube";
+      adDetails = `
+KEYWORDS: ${googleKeywords || "(not provided)"}
+WEBSITE: ${googleWebsite || "(not provided)"}
+HEADLINE: ${headline || "(not provided)"} [${(headline || "").length} characters — max 30]
+LONG HEADLINE: ${googleLongHeadline || "(not provided)"} [${(googleLongHeadline || "").length} characters — max 90]
+DESCRIPTION: ${googleDescription || "(not provided)"} [${(googleDescription || "").length} characters — max 90]
+YOUTUBE VIDEO URL: ${youtubeVideoUrl || "(not provided)"}
+VIDEO/VISUAL DESCRIPTION: ${imageDescription || "(not provided)"}
+AD CATEGORY: ${adCategory}
+      `.trim();
+    }
 
     // Build message content array
     const userContent = [];
@@ -392,23 +549,23 @@ AD CATEGORY: ${adCategory}
       const plural = images.length > 1;
       userContent.push({
         type: "text",
-        text: `The ${plural ? `${images.length} images above are the ad creatives/visuals` : "image above is the ad creative/visual"} that will be used in this political ad on Meta/Facebook. ${plural ? "This may be a carousel ad or A/B variants. Analyze EACH image individually and note which image any issues apply to." : "Please analyze it carefully"} for policy compliance issues including: text overlay percentage, prohibited imagery, misleading visuals, sensational content, personal attributes assumptions, disclaimer consistency, and any other visual policy concerns.\n\nHere are the additional ad details:\n\n${adDetails}`
+        text: `The ${plural ? `${images.length} images above are the ad creatives/visuals` : "image above is the ad creative/visual"} that will be used in this political ad on ${platformLabel}. ${plural ? "Analyze EACH image individually and note which image any issues apply to." : "Please analyze it carefully"} for policy compliance issues.\n\nHere are the additional ad details:\n\n${adDetails}`
       });
     } else {
       userContent.push({
         type: "text",
-        text: `Please analyze this political ad for Meta/Facebook policy compliance:\n\n${adDetails}`
+        text: `Please analyze this political ad for ${platformLabel} policy compliance:\n\n${adDetails}`
       });
     }
 
     try {
-    const response = await fetch("/api/analyze", {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 4096,
-          system: POLICY_SYSTEM_PROMPT,
+          system: systemPrompt,
           messages: [
             { role: "user", content: userContent }
           ],
@@ -454,7 +611,7 @@ AD CATEGORY: ${adCategory}
     }
   };
 
-  const hasInput = adText || headline;
+  const hasInput = platform === "meta" ? (adText || headline) : (headline || googleLongHeadline || googleDescription);
 
   return (
     <div style={{
@@ -497,7 +654,7 @@ AD CATEGORY: ${adCategory}
                 fontSize: "20px", fontWeight: 700, margin: 0, letterSpacing: "-0.02em",
                 background: "linear-gradient(135deg, #e2e8f0, #94a3b8)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
-              }}>Meta Political Ad Compliance Checker</h1>
+              }}>Political Ad Compliance Checker</h1>
               <p style={{
                 fontSize: "12px", color: "#64748b", margin: 0,
                 fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.04em"
@@ -526,6 +683,34 @@ AD CATEGORY: ${adCategory}
             }}>AD DETAILS</span>
           </div>
 
+          {/* Platform Toggle */}
+          <div style={{
+            display: "flex", background: "#080810", borderRadius: "8px",
+            border: "1px solid #1e293b", overflow: "hidden", marginBottom: "20px"
+          }}>
+            {[
+              { id: "meta", label: "META / FACEBOOK", icon: "\u24C2" },
+              { id: "google", label: "GOOGLE / YOUTUBE", icon: "\u25B6" }
+            ].map(p => (
+              <button key={p.id} onClick={() => { setPlatform(p.id); setResults(null); setError(null); }}
+                style={{
+                  flex: 1, background: platform === p.id
+                    ? (p.id === "meta" ? "linear-gradient(135deg, #1d4ed8, #7c3aed)" : "linear-gradient(135deg, #ea4335, #fbbc04)")
+                    : "transparent",
+                  border: "none",
+                  color: platform === p.id ? "#fff" : "#64748b",
+                  padding: "10px 16px", fontSize: "12px", fontWeight: 700,
+                  cursor: "pointer", fontFamily: "'JetBrains Mono', monospace",
+                  letterSpacing: "0.06em", transition: "all 0.3s",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
+                }}>
+                <span>{p.icon}</span> {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* META FIELDS */}
+          {platform === "meta" && (<>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
             <div>
               <label style={labelStyle}>Headline</label>
@@ -587,6 +772,99 @@ AD CATEGORY: ${adCategory}
               </select>
             </div>
           </div>
+          </>)}
+
+          {/* GOOGLE FIELDS */}
+          {platform === "google" && (<>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+            <div>
+              <label style={labelStyle}>Keywords <span style={{ fontWeight: 400, color: "#475569" }}>(optional)</span></label>
+              <input
+                value={googleKeywords} onChange={e => setGoogleKeywords(e.target.value)}
+                placeholder="e.g. vote, election 2026, candidate name"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Website <span style={{ fontWeight: 400, color: "#475569" }}>(optional)</span></label>
+              <input
+                value={googleWebsite} onChange={e => setGoogleWebsite(e.target.value)}
+                placeholder="https://..."
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+            <div>
+              <label style={labelStyle}>Headline <span style={{ fontWeight: 400, color: "#475569" }}>(max 30 chars)</span></label>
+              <input
+                value={headline} onChange={e => setHeadline(e.target.value)}
+                placeholder="Your ad headline..."
+                style={inputStyle}
+                maxLength={50}
+              />
+              <div style={{
+                fontSize: "10px", marginTop: "4px",
+                fontFamily: "'JetBrains Mono', monospace",
+                color: headline.length > 30 ? "#ef4444" : "#475569"
+              }}>{headline.length}/30 characters{headline.length > 30 ? " — EXCEEDS LIMIT" : ""}</div>
+            </div>
+            <div>
+              <label style={labelStyle}>Long Headline <span style={{ fontWeight: 400, color: "#475569" }}>(max 90 chars)</span></label>
+              <input
+                value={googleLongHeadline} onChange={e => setGoogleLongHeadline(e.target.value)}
+                placeholder="Longer version of your headline..."
+                style={inputStyle}
+                maxLength={120}
+              />
+              <div style={{
+                fontSize: "10px", marginTop: "4px",
+                fontFamily: "'JetBrains Mono', monospace",
+                color: googleLongHeadline.length > 90 ? "#ef4444" : "#475569"
+              }}>{googleLongHeadline.length}/90 characters{googleLongHeadline.length > 90 ? " — EXCEEDS LIMIT" : ""}</div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: "16px" }}>
+            <label style={labelStyle}>Description <span style={{ fontWeight: 400, color: "#475569" }}>(max 90 chars)</span></label>
+            <textarea
+              value={googleDescription} onChange={e => setGoogleDescription(e.target.value)}
+              placeholder="Describe your ad..."
+              rows={2}
+              style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+              maxLength={120}
+            />
+            <div style={{
+              fontSize: "10px", marginTop: "4px",
+              fontFamily: "'JetBrains Mono', monospace",
+              color: googleDescription.length > 90 ? "#ef4444" : "#475569"
+            }}>{googleDescription.length}/90 characters{googleDescription.length > 90 ? " — EXCEEDS LIMIT" : ""}</div>
+          </div>
+
+          <div style={{ marginBottom: "16px" }}>
+            <label style={labelStyle}>YouTube Video URL <span style={{ fontWeight: 400, color: "#475569" }}>(optional)</span></label>
+            <input
+              value={youtubeVideoUrl} onChange={e => setYoutubeVideoUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=..."
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ marginBottom: "16px" }}>
+            <label style={labelStyle}>Ad Category</label>
+            <select
+              value={adCategory} onChange={e => setAdCategory(e.target.value)}
+              style={{ ...inputStyle, cursor: "pointer", appearance: "none" }}
+            >
+              <option value="political">Political / Elections</option>
+              <option value="social_issue">Social Issue</option>
+              <option value="ballot_measure">Ballot Measure</option>
+              <option value="candidate">Candidate Ad</option>
+              <option value="issue_advocacy">Issue Advocacy</option>
+            </select>
+          </div>
+          </>)}
 
           {/* Media Upload Section */}
           <div style={{ marginBottom: "16px" }}>
@@ -746,6 +1024,7 @@ AD CATEGORY: ${adCategory}
             )}
           </div>
 
+          {platform === "meta" && (
           <div style={{ marginBottom: "20px" }}>
             <label style={labelStyle}>Target Audience</label>
             <input
@@ -754,6 +1033,7 @@ AD CATEGORY: ${adCategory}
               style={inputStyle}
             />
           </div>
+          )}
 
           <button
             onClick={analyzeAd}
