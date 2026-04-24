@@ -1,41 +1,37 @@
-# Meta Political Ad Compliance Checker
+# Political Ad Compliance Checker
 
-AI-powered pre-submission screening tool for Meta/Facebook political ads. Catches policy violations, flags misclassification risks, and provides actionable fixes — before you submit to Meta.
+AI-powered pre-submission screening tool for political ads on **Meta/Facebook** and **Google/YouTube**. Catches policy violations, flags misclassification risks, and provides actionable fixes — before you submit.
 
-Built on Meta's official Advertising Standards and Community Standards, and calibrated against real-world ad rejection data.
+Built on official advertising policies from both platforms and calibrated against real-world ad rejection data.
 
 ---
 
 ## What It Does
 
-Upload your ad creative and enter your copy. The tool analyzes everything against Meta's policies and returns:
+Toggle between Meta and Google, upload your ad creative and enter your copy. The tool analyzes everything against the selected platform's policies and returns:
 
 - **Risk score** (0–100) with LOW / MEDIUM / HIGH rating
 - **Issues ranked by severity** — Tier 1 (immediate rejection) through Tier 4 (best practices)
 - **Specific policy citations** for every issue found
 - **Actionable fix recommendations** for each issue
-- **Financial Services misclassification detection** — the #1 cause of political ad rejections
 
-### Policy Coverage
+### Meta / Facebook
 
 - "Paid for by" disclaimer validation and cross-checking
 - Ad Authorization and Special Ad Category requirements
 - Personal Attributes violations (with Meta's exact approved/prohibited examples)
 - Community Standards (hate speech, misinformation, violent content, profanity)
-- Adult content, nudity, and sexually suggestive content
 - Discriminatory practices and targeting restrictions
-- Landing page alignment
-- Text overlay and delivery impact
-- Intellectual property concerns
+- **Financial Services misclassification detection** — the #1 cause of political ad rejections, trained on real rejection data
 
-### Financial Services Misclassification Detection
+### Google / YouTube / Discover Feed
 
-Meta's automated review system frequently misclassifies political ads as "Financial and Insurance Products and Services," triggering automatic rejection. This tool identifies the specific words and image elements that trigger this misclassification, including:
-
-- Financial language in political context (taxes, spending, stocks, inflation, homeowners)
-- Money/currency imagery used as backgrounds
-- Account-level risk patterns
-- Specific rewording suggestions to avoid the trigger
+- "Paid for by" disclosure and identity verification requirements
+- Character limit validation (headline 30, long headline 90, description 90)
+- YouTube and Discover Feed creative quality requirements (clickbait, negative imagery, improper content, racy content, profanity)
+- **Election Ad Exemption analysis** — verified election ads are exempt from YouTube/Discover-specific rules but still subject to standard Google Ads policies
+- Editorial standards and destination requirements
+- Targeting restrictions for political ads
 
 ---
 
@@ -44,11 +40,11 @@ Meta's automated review system frequently misclassifies political ads as "Financ
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
 │  Web App     │────▶│ Express API  │────▶│  Claude API     │
-│  (React)    │     │  /api/check  │     │  (Sonnet 4)     │
-└─────────────┘     │  /api/analyze│     ├─────────────────┤
-                    └──────────────┘────▶│  OpenAI (GPT-4o)│
-                     Stores API keys     │  (fallback)     │
-                     securely on server  └─────────────────┘
+│  (React)    │     │  /api/analyze │     │  (Sonnet 4)     │
+└─────────────┘     └──────────────┘     ├─────────────────┤
+                     Stores API keys    ▶│  OpenAI (GPT-4o)│
+                     securely on server  │  (fallback)     │
+                                         └─────────────────┘
 ```
 
 - API keys never leave the server
@@ -70,7 +66,7 @@ Meta's automated review system frequently misclassifies political ads as "Financ
 ### Run It
 
 ```bash
-cd meta-ad-compliance-checker
+cd political-ad-compliance-checker
 npm install
 export ANTHROPIC_API_KEY=sk-ant-your-key-here
 export OPENAI_API_KEY=sk-your-key-here    # optional
@@ -81,7 +77,9 @@ Open **http://localhost:5173**
 
 ---
 
-## Deploy to Production (Railway)
+## Deploy to Production
+
+### Railway
 
 1. Push this repo to GitHub
 2. Go to https://railway.app → **New Project** → **Deploy from GitHub**
@@ -91,29 +89,29 @@ Open **http://localhost:5173**
    - `NODE_ENV` — `production`
    - `API_ACCESS_KEY` — a secret key for API authentication (optional)
 4. In **Settings** → **Networking**, generate a domain and set the port to match the Deploy Logs
-5. Done — share the URL with your team
+5. Share the URL with your team
+
+### Render
+
+1. Push code to GitHub
+2. Go to https://render.com → **New Web Service** → connect your repo
+3. Build command: `npm install && npm run build`
+4. Start command: `npm start`
+5. Add environment variables and deploy
 
 ---
 
 ## API
 
-The tool exposes a REST API for integration with other tools and scripts.
-
 ### `POST /api/check`
 
-Run a compliance check on an ad.
-
-**Headers:**
-
-| Header | Required | Description |
-|---|---|---|
-| `Content-Type` | Yes | `application/json` |
-| `x-api-key` | If configured | API access key (set `API_ACCESS_KEY` in env) |
+Run a compliance check. The server selects the correct policy prompt based on the platform field.
 
 **Request Body:**
 
 ```json
 {
+  "platform": "meta",
   "headline": "Vote YES on Prop 42",
   "body_text": "Better schools for our community.",
   "paid_for_by": "Citizens for Better Schools",
@@ -130,68 +128,11 @@ Run a compliance check on an ad.
 }
 ```
 
-At least one of `headline`, `body_text`, or `images` must be provided.
-
-**Response:**
-
-```json
-{
-  "overall_risk": "MEDIUM",
-  "overall_score": 62,
-  "summary": "The ad contains language that may trigger Financial Services misclassification.",
-  "categories": [
-    {
-      "name": "Financial Services Misclassification Risk",
-      "status": "WARNING",
-      "confidence": 85,
-      "issues": [
-        {
-          "tier": 2,
-          "title": "[T2] Financial language may trigger misclassification",
-          "severity": "critical",
-          "description": "The phrase 'opposing tax hikes' and 'cutting government spending' may cause Meta's automated system to flag this as a financial services ad.",
-          "recommendation": "Consider rewording to 'fighting wasteful government programs' and 'standing up against higher costs of living'.",
-          "meta_policy_ref": "Advertising Standards — Financial and Insurance Products and Services"
-        }
-      ]
-    }
-  ],
-  "quick_fixes": ["Reword financial-adjacent language to avoid misclassification"]
-}
-```
+For Google ads, use `"platform": "google"` and include `long_headline`, `description`, `keywords`, `website`, and `youtube_video_url` fields.
 
 ### `GET /api/health`
 
 Check server status and API key configuration.
-
-### Example: cURL
-
-```bash
-curl -X POST https://your-app.up.railway.app/api/check \
-  -H "Content-Type: application/json" \
-  -d '{
-    "headline": "Vote YES on Prop 42",
-    "body_text": "As a taxpayer, you deserve better schools.",
-    "paid_for_by": "Citizens for Better Schools"
-  }'
-```
-
-### Example: Python
-
-```python
-import requests
-
-result = requests.post("https://your-app.up.railway.app/api/check", json={
-    "headline": "Vote YES on Prop 42",
-    "body_text": "Better schools for our community.",
-    "paid_for_by": "Citizens for Better Schools",
-}).json()
-
-print(f"Risk: {result['overall_risk']} (Score: {result['overall_score']})")
-for cat in result["categories"]:
-    for issue in cat["issues"]:
-        print(f"  [{issue['tier']}] {issue['title']}")
-```
 
 ---
 
@@ -204,12 +145,9 @@ for cat in result["categories"]:
 ├── Dockerfile              # Docker build config
 ├── server/
 │   └── index.js            # Express API server
-│       ├── /api/check      # Compliance check endpoint
-│       ├── /api/analyze    # Legacy frontend endpoint
-│       └── /api/health     # Health check
 └── src/
     ├── main.jsx            # React entry point
-    └── App.jsx             # Frontend application
+    └── App.jsx             # Frontend (Meta + Google)
 ```
 
 ## Environment Variables
@@ -224,18 +162,19 @@ for cat in result["categories"]:
 
 ## Cost
 
-Each compliance check costs approximately **$0.01–$0.05** depending on the number of images uploaded. Monitor usage at https://console.anthropic.com and https://platform.openai.com.
+Each compliance check costs approximately **$0.01–$0.05** depending on the number of images uploaded.
 
 ## Accuracy
 
-The system prompt is grounded in:
+The system prompts are grounded in:
 
-- **Meta's official Advertising Standards** (verbatim policy language)
-- **Meta's Community Standards**
+- **Meta's official Advertising Standards** and **Community Standards** (verbatim policy language)
 - **Meta's Privacy Violations and Personal Attributes policy** (with exact approved/prohibited examples)
-- **Real-world rejection data** from political ad campaigns, calibrated against actual Meta enforcement outcomes
+- **Real-world Meta rejection data** from political ad campaigns
+- **Google Ads policies** including Political Content, Misrepresentation, Editorial Standards
+- **YouTube and Discover Feed Ad Requirements** (from support.google.com/adspolicy/answer/10249050) including the Election Ad Exemption
 
-The tool is most accurate for US political/electoral ads and issue advocacy ads. Accuracy improves over time as more rejection data is fed into the system prompt.
+The tool is most accurate for US political/electoral ads and issue advocacy ads.
 
 ---
 
