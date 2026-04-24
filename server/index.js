@@ -261,9 +261,11 @@ function requireApiKey(req, res, next) {
 }
 
 // ─── Claude call with retry ───────────────────────────────────────
-async function callClaude(messages, maxTokens) {
+async function callClaude(messages, maxTokens, systemPrompt) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set.');
+
+  const sysPrompt = systemPrompt || POLICY_SYSTEM_PROMPT;
 
   for (let attempt = 0; attempt <= 2; attempt++) {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -276,7 +278,7 @@ async function callClaude(messages, maxTokens) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: maxTokens || 4096,
-        system: POLICY_SYSTEM_PROMPT,
+        system: sysPrompt,
         messages,
       }),
     });
@@ -301,11 +303,12 @@ async function callClaude(messages, maxTokens) {
 }
 
 // ─── OpenAI fallback ──────────────────────────────────────────────
-async function callOpenAI(messages) {
+async function callOpenAI(messages, systemPrompt) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY is not set. Cannot fall back.');
 
-  const oaiMessages = [{ role: 'system', content: POLICY_SYSTEM_PROMPT }];
+  const sysPrompt = systemPrompt || POLICY_SYSTEM_PROMPT;
+  const oaiMessages = [{ role: 'system', content: sysPrompt }];
 
   for (const msg of messages) {
     if (typeof msg.content === 'string') {
@@ -445,13 +448,14 @@ app.post('/api/check', rateLimit, requireApiKey, async (req, res) => {
 app.post('/api/analyze', rateLimit, async (req, res) => {
   try {
     let data;
+    const systemPrompt = req.body.system || POLICY_SYSTEM_PROMPT;
     try {
-      data = await callClaude(req.body.messages, req.body.max_tokens || 4096);
+      data = await callClaude(req.body.messages, req.body.max_tokens || 4096, systemPrompt);
       console.log('Response from: claude');
     } catch (err) {
       if (err.message === 'OVERLOADED') {
         console.log('Claude overloaded. Falling back to OpenAI...');
-        data = await callOpenAI(req.body.messages);
+        data = await callOpenAI(req.body.messages, systemPrompt);
         console.log('Response from: openai (fallback)');
       } else {
         throw err;
