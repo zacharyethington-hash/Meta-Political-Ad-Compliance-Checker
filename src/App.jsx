@@ -221,35 +221,93 @@ Google requires election ads to comply with local legal requirements in addition
 - Images must be high quality (at least 1200px wide recommended)
 - Images must not be overly edited, manipulated, or contain excessive text overlay
 
+### SOURCE: YouTube and Discover Feed Ad Requirements (Official Google Policy — support.google.com/adspolicy/answer/10249050)
+
+YouTube and Discover Feed ads are subject to standard Google Ads policies PLUS additional creative quality requirements. These are the PROHIBITED categories:
+
+**EXAGGERATED OR INACCURATE CLAIMS (CLICKBAIT)**
+Ads containing exaggerated or inaccurate claims that promote unrealistic expectations are NOT allowed:
+- Ads promising overnight financial success or "free money" without clear legitimate steps (e.g., "Make $5,000 in 5 minutes!")
+- Ads with misleading/exaggerated claims about price, availability, quality, or effectiveness (e.g., advertising a $1,000 item for "$1 ONLY!")
+- Ads using language to elicit strong negative emotional reactions or create false urgency (e.g., "Only 5 minutes to save a life!")
+- Ads with false/exaggerated health claims — promising secret cures, guaranteeing unrealistic transformation, misleading before-and-after images, claiming "100% effective" (e.g., "Cure all allergies instantly!")
+- ALLOWED: Ads promising money that clearly indicate legitimate steps required. User testimonials without exaggerated claims.
+
+**NEGATIVE EVENTS AND IMAGERY**
+- PROHIBITED: Ads showing funerals with people weeping/mourning/screaming, severe emotional breakdowns
+- PROHIBITED: Ads designed to scare intentionally — simulated/real footage of distressing accidents, natural disasters, civil unrest, riots, jump-scares
+- PROHIBITED: Ads focusing on abuse or addiction likely to cause distress — depictions of domestic violence, emotional abuse, graphic self-harm, overdose symptoms
+- PROHIBITED: Disturbing/repulsive content related to injuries or death — excessively gory content, gratuitous blood/bodily fluids, exposed organs
+- ALLOWED: Content presented neutrally avoiding distressing themes. Factual presentation of sensitive topics.
+
+**IMPROPER CONTENT — Body Parts and Health Conditions**
+- PROHIBITED: Ads showing medical/dental surgery with blood, gore, bodily fluids, tooth decay
+- PROHIBITED: Ads showing bodily symptoms like fluids, rashes, visible pus, close-ups of infections
+- PROHIBITED: Ads emphasizing body parts likely to make viewers feel self-conscious (close-ups of wrinkles, stretch marks, acne with negative sentiment)
+- ALLOWED: Ads for weight loss, hair loss, skin conditions if imagery isn't disturbing
+
+**IMPROPER CONTENT — Violent and Dangerous Acts**
+- PROHIBITED: Realistic/graphic depictions of violent acts, harm with weapons, graphic wounds, excessive bloodshed
+- PROHIBITED: Content depicting weapons or illegal activity (drug trafficking, close-up military-grade weapons being used)
+- PROHIBITED: Dangerous actions that could result in bodily harm or encourage imitation
+
+**IMPROPER CONTENT — Racy Content**
+- PROHIBITED: Adult content where majority of ad focuses on nudity or sexual topics (visible genitalia, exposed breasts, focus on groin, majority of buttocks exposed, sexually suggestive poses)
+- PROHIBITED: Dating promotion using sexually suggestive imagery/language ("hook-up", "no strings attached", "naughty singles")
+- PROHIBITED: Sexual entertainment (strip clubs, sexually suggestive live streaming, suggestive role playing games)
+- ALLOWED: Swimwear/spa promotion that is not overtly sexualized. Displays of affection that are not sexually suggestive. Sexual health products if not sexualized (must mention brand name).
+
+**IMPROPER CONTENT — Recreational Drugs**
+- PROHIBITED: Ads showing sale, consumption, or glorification of recreational drugs, illegal substances, cannabis, marijuana, nicotine products, or accessories (bongs, pipes, rolling papers)
+- ALLOWED: Educational purposes like addiction prevention, provided no explicit/sensationalized imagery
+
+**IMPROPER CONTENT — Inappropriate Language**
+- PROHIBITED: Obscene, profane, or offensive language or gestures (including all translations, variations, misspellings of profane language, and hand gestures)
+- PROHIBITED: Derogatory language inciting hatred, promoting discrimination, or disparaging individuals/groups associated with systemic discrimination (slurs relating to race, sexuality, etc.)
+
+**SENSITIVE APPLICATIONS**
+- PROHIBITED on YouTube/Discover: Social apps with adult content, apps primarily for meeting new people, apps primarily for dating/relationships (UNLESS the app has no live stream features, no live chats with strangers, and no racy/suggestive content)
+
+**QUALITY CHECKS**
+- Assets must have clarity, correct spelling, proper capitalization and symbols
+- Images must not be blurred, distorted, or poorly cropped
+
+**CRITICAL: ELECTION ADS EXCEPTION**
+"Election ads are exempt from the YouTube and Discover Feed ad requirements, though they remain subject to the Google Ads policies. To qualify for this exception, an advertiser must be verified under the Election Ads verification process for the region where the ad will run."
+This means political/election ads that are properly verified are NOT subject to the YouTube/Discover-specific restrictions above (clickbait, negative imagery, improper content), BUT they ARE still subject to all standard Google Ads policies (misrepresentation, hate speech, etc.).
+
 ---
 
 ## ENFORCEMENT HIERARCHY
 
 ### TIER 1 — IMMEDIATE DISAPPROVAL (severity: "critical")
 1.1 **Missing "Paid for by" Disclosure** — ALL election ads must include a "Paid for by" disclosure.
-1.2 **Missing Identity Verification** — Advertisers must complete Google's election ad verification.
-1.3 **Demonstrably False Election Claims** — False election dates, procedures, or integrity claims = FAIL.
-1.4 **Manipulated Media** — Deepfakes or doctored images of political figures = FAIL.
-1.5 **Hate Speech** — Content targeting groups based on protected characteristics = FAIL.
-1.6 **Misrepresentation** — Deceiving about advertiser identity or political affiliations = FAIL.
+1.2 **Missing Identity Verification** — Advertisers must complete Google's election ad verification. Without this, the election ad exemption from YouTube/Discover requirements does NOT apply.
+1.3 **Demonstrably False Election Claims** — False election dates, procedures, or integrity claims = FAIL. This applies even with election ad exemption.
+1.4 **Manipulated Media** — Deepfakes or doctored images of political figures = FAIL. This applies even with election ad exemption.
+1.5 **Hate Speech** — Content targeting groups based on protected characteristics = FAIL. This applies even with election ad exemption.
+1.6 **Misrepresentation** — Deceiving about advertiser identity or political affiliations = FAIL. This applies even with election ad exemption.
 
 ### TIER 2 — LIKELY DISAPPROVAL (severity: "critical" or "warning")
 2.1 **Editorial Violations** — Excessive capitalization, punctuation, clickbait = WARNING to FAIL.
 2.2 **Character Limit Violations** — Headlines >30 chars, long headlines >90 chars, descriptions >90 chars = FAIL. COUNT CHARACTERS CAREFULLY.
 2.3 **Destination Mismatch** — Landing page doesn't match ad claims = FAIL.
-2.4 **Inappropriate/Shocking Content** — Violent, sensational imagery or language = FAIL.
+2.4 **Inappropriate/Shocking Content** — Violent, sensational imagery or language = FAIL. NOTE: If advertiser is verified for election ads, this is downgraded to INFO for YouTube/Discover (but still applies under standard Google Ads policies).
 2.5 **Trademark Violations** — Unauthorized trademark use = WARNING to FAIL.
+2.6 **Profanity/Inappropriate Language** — Per YouTube/Discover policy: obscene, profane language, variations and misspellings of profanity, derogatory slurs = FAIL.
 
 ### TIER 3 — RESTRICTED DELIVERY / REVIEW (severity: "warning")
 3.1 **Targeting Restrictions** — Political ads cannot use political affiliation targeting.
-3.2 **Image Quality Issues (Discover)** — Low resolution, excessive text overlay = WARNING.
-3.3 **Clickbait Language** — Sensational or misleading headlines = WARNING.
+3.2 **Image Quality Issues (Discover)** — Low resolution, blurred, distorted, poorly cropped images, excessive text overlay = WARNING.
+3.3 **Clickbait Language** — Exaggerated claims, false urgency, strong negative emotional manipulation = WARNING. NOTE: Verified election ads are exempt from YouTube/Discover clickbait rules, but the ad may still violate standard Google Ads misrepresentation policies.
 3.4 **YouTube Video Quality** — Low production quality or misleading thumbnails.
+3.5 **Negative Imagery Risk** — Ads using distressing imagery (funerals, accidents, disasters, abuse). Verified election ads are exempt from YouTube/Discover rules on this, but FLAG as INFO so advertiser is aware.
 
 ### TIER 4 — BEST PRACTICES (severity: "info")
 4.1 **Keyword Optimization** — Keyword alignment with ad copy.
 4.2 **Ad Format Best Practices** — Character usage, image sizing, CTA effectiveness.
 4.3 **Compliance Documentation** — Verification status, FEC requirements.
+4.4 **Election Ad Exemption Status** — ALWAYS note whether the ad qualifies for the election ad exemption from YouTube/Discover requirements, and explain which rules still apply vs. which are exempted.
 
 ---
 
@@ -258,6 +316,7 @@ Google requires election ads to comply with local legal requirements in addition
 2. Each issue includes meta_policy_ref citing the specific Google policy.
 3. Score weighting: T1 FAIL caps at 30, T2 FAIL caps at 55, T3 WARNINGs don't drop below 60.
 4. **CHARACTER COUNT CHECK**: Always count and report character counts for headlines (max 30), long headlines (max 90), and descriptions (max 90).
+5. **ALWAYS include an "Election Ad Exemption" category** that explains whether the ad qualifies for the YouTube/Discover exemption and what that means for the specific issues found.
 
 Respond ONLY in valid JSON with this structure:
 {
